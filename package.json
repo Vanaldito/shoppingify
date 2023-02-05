@@ -1,0 +1,31 @@
+{
+  "name": "shoppingify",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently --names 'SERVER,CLIENT' -c 'red,green' 'cd server && yarn dev' 'cd client && yarn dev'",
+    "prepare": "husky install",
+    "co": "sui-mono commit"
+  },
+  "devDependencies": {
+    "@s-ui/mono": "^2.34.0",
+    "@typescript-eslint/eslint-plugin": "^5.50.0",
+    "@typescript-eslint/parser": "^5.50.0",
+    "concurrently": "^7.6.0",
+    "eslint": "^8.33.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.32.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.1.0",
+    "prettier": "^2.8.3",
+    "typescript": "^4.9.5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md,css,html,yaml}": "prettier --write",
+    "*.{ts,tsx,js,jsx}": "eslint --fix"
+  }
+}
