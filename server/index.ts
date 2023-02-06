@@ -1,6 +1,11 @@
 import express from "express";
+import { api } from "./src/routes";
 
 const app = express();
+
+app.use(express.json());
+
+app.use("/api", api);
 
 app.get("*", (_req, res) => {
   res.status(404).send("Error 404 ~ Page not found");
