@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { Router } from "express";
 import { isValidEmailFormat } from "../helpers";
 import { User } from "../models";
@@ -35,7 +36,7 @@ api.post("/users/login", async (req, res) => {
       .json({ status: 500, error: "Internal server error" });
   }
 
-  if (user === undefined || user.password !== password) {
+  if (user === undefined || !bcrypt.compareSync(password, user.password)) {
     return res
       .status(401)
       .json({ status: 401, error: "Email or password incorrect" });

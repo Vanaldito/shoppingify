@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import supertest from "supertest";
 import { app, server } from "../../../index";
 import { User } from "../../../src/models";
@@ -5,11 +6,13 @@ import { User } from "../../../src/models";
 const api = supertest(app);
 
 jest.spyOn(User, "findByEmail").mockImplementation(email => {
+  const saltRounds = 10;
+
   return new Promise(resolve =>
     resolve({
       id: 1,
       email: email,
-      password: "Password",
+      password: bcrypt.hashSync("Password", saltRounds),
     })
   );
 });
@@ -97,11 +100,13 @@ describe("api.ts test", () => {
     const findByEmail = jest
       .spyOn(User, "findByEmail")
       .mockImplementation(email => {
+        const saltRounds = 10;
+
         return new Promise(resolve =>
           resolve({
             id: 1,
             email: email,
-            password: "Password",
+            password: bcrypt.hashSync("Password", saltRounds),
           })
         );
       });
@@ -119,15 +124,17 @@ describe("api.ts test", () => {
     expect(findByEmail).toHaveBeenCalledTimes(1);
   });
 
-  it("/api/users/login ~ Should be case insensitive and ignore the extra spaces of the email property", async () => {
+  it("/api/users/login ~ Should be case insensitive and ignore the extra spaces of the email property and compare with the hashed password", async () => {
     const findByEmail = jest
       .spyOn(User, "findByEmail")
       .mockImplementation(email => {
+        const saltRounds = 10;
+
         const users = [
           {
             id: 1,
             email: "test@test.com",
-            password: "Password",
+            password: bcrypt.hashSync("Password", saltRounds),
           },
         ];
 
