@@ -147,4 +147,24 @@ describe("api.ts test", () => {
 
     expect(findByEmail).toHaveBeenCalledTimes(1);
   });
+
+  it("/api/users/login ~ Should return a status code 500 if the database throw an error", async () => {
+    const findByEmail = jest
+      .spyOn(User, "findByEmail")
+      .mockImplementation(() => {
+        throw new Error("Database error");
+      });
+
+    const response = await api
+      .post("/api/users/login")
+      .send({ email: "test@test.com", password: "Password" })
+      .expect(500);
+
+    expect(response.body).toEqual({
+      status: 500,
+      error: "Internal server error",
+    });
+
+    expect(findByEmail).toHaveBeenCalledTimes(1);
+  });
 });

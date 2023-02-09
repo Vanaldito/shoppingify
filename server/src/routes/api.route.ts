@@ -25,7 +25,15 @@ api.post("/users/login", async (req, res) => {
       .json({ status: 400, error: "Password is not valid" });
   }
 
-  const user = await User.findByEmail(email.toLowerCase().trim());
+  let user;
+  try {
+    user = await User.findByEmail(email.toLowerCase().trim());
+  } catch (err) {
+    console.log(`/api/users/login ~ Error: ${err}`);
+    return res
+      .status(500)
+      .json({ status: 500, error: "Internal server error" });
+  }
 
   if (user === undefined || user.password !== password) {
     return res
