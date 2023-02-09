@@ -1,8 +1,12 @@
-export const users: UserData[] = [];
+import db from "./db.model";
 
 interface UserData {
   email: string;
   password: string;
+}
+
+interface DatabaseUserRow extends UserData {
+  id: number;
 }
 
 export default class User {
@@ -15,10 +19,23 @@ export default class User {
   }
 
   public save() {
-    users.push({ email: this.email, password: this.password });
+    return db.query("INSERT INTO users (email, password) VALUES ($1, $2)", [
+      this.email,
+      this.password,
+    ]);
   }
 
-  static findByEmail(email: string) {
-    return users.find(user => user.email === email);
+  static async findByEmail(email: string) {
+    const dbResult = await db.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+
+    const users = dbResult.rows as DatabaseUserRow[];
+
+    if (users.length === 0) {
+      return undefined;
+    }
+
+    return users[0];
   }
 }

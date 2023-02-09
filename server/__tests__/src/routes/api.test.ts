@@ -5,10 +5,13 @@ import { User } from "../../../src/models";
 const api = supertest(app);
 
 jest.spyOn(User, "findByEmail").mockImplementation(email => {
-  return {
-    email: email,
-    password: "Password",
-  };
+  return new Promise(resolve =>
+    resolve({
+      id: 1,
+      email: email,
+      password: "Password",
+    })
+  );
 });
 
 describe("api.ts test", () => {
@@ -94,10 +97,13 @@ describe("api.ts test", () => {
     const findByEmail = jest
       .spyOn(User, "findByEmail")
       .mockImplementation(email => {
-        return {
-          email: email,
-          password: "Password",
-        };
+        return new Promise(resolve =>
+          resolve({
+            id: 1,
+            email: email,
+            password: "Password",
+          })
+        );
       });
 
     const response = await api
@@ -119,12 +125,15 @@ describe("api.ts test", () => {
       .mockImplementation(email => {
         const users = [
           {
+            id: 1,
             email: "test@test.com",
             password: "Password",
           },
         ];
 
-        return users.find(user => user.email === email);
+        return new Promise(resolve =>
+          resolve(users.find(user => user.email === email))
+        );
       });
 
     const response = await api

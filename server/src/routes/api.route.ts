@@ -4,7 +4,7 @@ import { User } from "../models";
 
 const api = Router();
 
-api.post("/users/login", (req, res) => {
+api.post("/users/login", async (req, res) => {
   const { email, password } = req.body;
 
   const emailIsNotValid =
@@ -25,7 +25,7 @@ api.post("/users/login", (req, res) => {
       .json({ status: 400, error: "Password is not valid" });
   }
 
-  const user = User.findByEmail(email.toLowerCase().trim());
+  const user = await User.findByEmail(email.toLowerCase().trim());
 
   if (user === undefined || user.password !== password) {
     return res
