@@ -1,12 +1,9 @@
 import { Client } from "pg";
 import env from "../../environment";
 
-let port;
-try {
-  port = env.PG_PORT === undefined ? undefined : parseInt(env.PG_PORT);
-} catch {
-  port = undefined;
-}
+const isNotValidPort =
+  env.PG_PORT === undefined || isNaN(parseInt(env.PG_PORT));
+const port = isNotValidPort ? undefined : parseInt(env.PG_PORT as string);
 
 const db = new Client({
   host: env.PG_HOST,
