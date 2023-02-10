@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import { DatabaseError } from "pg";
 import supertest from "supertest";
 import { app, server } from "../../../index";
 import { User } from "../../../src/models";
@@ -15,6 +16,10 @@ jest.spyOn(User, "findByEmail").mockImplementation(email => {
       password: bcrypt.hashSync("Password", saltRounds),
     })
   );
+});
+
+jest.spyOn(User.prototype, "save").mockImplementation(() => {
+  return new Promise(resolve => resolve(true));
 });
 
 describe("api.ts test", () => {
@@ -155,7 +160,7 @@ describe("api.ts test", () => {
     expect(findByEmail).toHaveBeenCalledTimes(1);
   });
 
-  it("/api/users/login ~ Should return a status code 500 if the database throw an error", async () => {
+  it("/api/users/login ~ Should return a status code 500 if the database throws an error", async () => {
     const findByEmail = jest
       .spyOn(User, "findByEmail")
       .mockImplementation(() => {
@@ -173,5 +178,139 @@ describe("api.ts test", () => {
     });
 
     expect(findByEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it("/api/users/register ~ Should return a status code 400 and a json error if the email is not a string", async () => {
+    const response = await api
+      .post("/api/users/register")
+      .send({ email: 10, password: "Something" })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      status: 400,
+      error: "Email is not valid",
+    });
+  });
+
+  it("/api/users/register ~ Should return a status code 400 and a json error if the email is an empty string or a string of only spaces", async () => {
+    const response = await api
+      .post("/api/users/register")
+      .send({ email: "  \n", password: "Something" })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      status: 400,
+      error: "Email is not valid",
+    });
+  });
+
+  it("/api/users/register ~ Should return a status code 400 and a json error is the email doesn't have the correct format", async () => {
+    const response1 = await api
+      .post("/api/users/register")
+      .send({ email: "hi", password: "Something" })
+      .expect(400);
+
+    expect(response1.body).toEqual({
+      status: 400,
+      error: "Email is not valid",
+    });
+
+    const response2 = await api
+      .post("/api/users/register")
+      .send({ email: "test@test", password: "Something" })
+      .expect(400);
+
+    expect(response2.body).toEqual({
+      status: 400,
+      error: "Email is not valid",
+    });
+  });
+
+  it("/api/users/register ~ Should return a status code 400 and a json error if the password is not a string", async () => {
+    const response = await api
+      .post("/api/users/register")
+      .send({ email: "test@test.com", password: { a: 1 } })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      status: 400,
+      error: "Password is not valid",
+    });
+  });
+
+  it("/api/users/register ~ Should return a status code 400 and a json error if the password is an empty string or a string of only spaces", async () => {
+    const response = await api
+      .post("/api/users/register")
+      .send({ email: "test@test.com", password: "" })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      status: 400,
+      error: "Password is not valid",
+    });
+  });
+
+  it("/api/users/register ~ Should save the user info if all of the email and the password are valid", async () => {
+    const saveUser = jest
+      .spyOn(User.prototype, "save")
+      .mockImplementation(() => {
+        return new Promise(resolve => resolve(true));
+      });
+
+    const response = await api
+      .post("/api/users/register")
+      .send({
+        email: "test@test.com",
+        password: "Password",
+      })
+      .expect(200);
+
+    expect(saveUser).toHaveBeenCalledTimes(1);
+
+    expect(response.body).toEqual({
+      status: 200,
+    });
+  });
+
+  it("/api/users/register ~ Should return a status code 409 if the email is already used", async () => {
+    jest.spyOn(User.prototype, "save").mockImplementation(() => {
+      throw new DatabaseError(
+        'duplicate key value violates unique constraint "users_email_key"',
+        205,
+        "error"
+      );
+    });
+
+    const response = await api
+      .post("/api/users/register")
+      .send({
+        email: "test@test.com",
+        password: "Password",
+      })
+      .expect(409);
+
+    expect(response.body).toEqual({
+      status: 409,
+      error: "Email is already used",
+    });
+  });
+
+  it("/api/users/register ~ Should return a status code 500 if the database throws an error", async () => {
+    jest.spyOn(User.prototype, "save").mockImplementation(() => {
+      throw new Error("");
+    });
+
+    const response = await api
+      .post("/api/users/register")
+      .send({
+        email: "test@test.com",
+        password: "Password",
+      })
+      .expect(500);
+
+    expect(response.body).toEqual({
+      status: 500,
+      error: "Internal server error",
+    });
   });
 });

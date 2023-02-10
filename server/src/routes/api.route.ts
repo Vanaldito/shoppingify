@@ -1,9 +1,53 @@
 import bcrypt from "bcrypt";
 import { Router } from "express";
+import { DatabaseError } from "pg";
 import { isValidEmailFormat } from "../helpers";
 import { User } from "../models";
 
 const api = Router();
+
+api.post("/users/register", async (req, res) => {
+  const { email, password } = req.body;
+
+  const emailIsNotValid =
+    typeof email !== "string" ||
+    email.trim() === "" ||
+    !isValidEmailFormat(email);
+
+  if (emailIsNotValid) {
+    return res.status(400).json({ status: 400, error: "Email is not valid" });
+  }
+
+  const passwordIsNotValid =
+    typeof password !== "string" || password.trim() === "";
+
+  if (passwordIsNotValid) {
+    return res
+      .status(400)
+      .json({ status: 400, error: "Password is not valid" });
+  }
+
+  try {
+    await new User({ email, password }).save();
+  } catch (err) {
+    if (
+      err instanceof DatabaseError &&
+      err.message ===
+        'duplicate key value violates unique constraint "users_email_key"'
+    ) {
+      return res
+        .status(409)
+        .json({ status: 409, error: "Email is already used" });
+    }
+
+    console.log(`/api/users/register ~ Error: ${err}`);
+    return res
+      .status(500)
+      .json({ status: 500, error: "Internal server error" });
+  }
+
+  return res.status(200).json({ status: 200 });
+});
 
 api.post("/users/login", async (req, res) => {
   const { email, password } = req.body;
