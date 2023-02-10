@@ -18,11 +18,13 @@ export default class User {
     this.password = password;
   }
 
-  public save() {
-    return db.query("INSERT INTO users (email, password) VALUES ($1, $2)", [
+  public async save() {
+    await db.query("INSERT INTO users (email, password) VALUES ($1, $2)", [
       this.email,
       this.password,
     ]);
+
+    return true;
   }
 
   static async findByEmail(email: string) {
