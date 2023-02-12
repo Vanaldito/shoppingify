@@ -28,7 +28,7 @@ api.post("/users/register", async (req, res) => {
   }
 
   try {
-    await new User({ email, password }).save();
+    await User.save({ email, password });
   } catch (err) {
     if (
       err instanceof DatabaseError &&

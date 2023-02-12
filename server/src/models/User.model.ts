@@ -10,18 +10,10 @@ interface DatabaseUserRow extends UserData {
 }
 
 export default class User {
-  email: string;
-  password: string;
-
-  constructor({ email, password }: UserData) {
-    this.email = email;
-    this.password = password;
-  }
-
-  public async save() {
+  static async save({ email, password }: UserData) {
     await db.query("INSERT INTO users (email, password) VALUES ($1, $2)", [
-      this.email,
-      this.password,
+      email,
+      password,
     ]);
 
     return true;

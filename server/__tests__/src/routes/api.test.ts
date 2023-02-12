@@ -18,7 +18,7 @@ jest.spyOn(User, "findByEmail").mockImplementation(email => {
   );
 });
 
-jest.spyOn(User.prototype, "save").mockImplementation(() => {
+jest.spyOn(User, "save").mockImplementation(() => {
   return new Promise(resolve => resolve(true));
 });
 
@@ -251,11 +251,9 @@ describe("api.ts test", () => {
   });
 
   it("/api/users/register ~ Should save the user info if all of the email and the password are valid", async () => {
-    const saveUser = jest
-      .spyOn(User.prototype, "save")
-      .mockImplementation(() => {
-        return new Promise(resolve => resolve(true));
-      });
+    const saveUser = jest.spyOn(User, "save").mockImplementation(() => {
+      return new Promise(resolve => resolve(true));
+    });
 
     const response = await api
       .post("/api/users/register")
@@ -273,7 +271,7 @@ describe("api.ts test", () => {
   });
 
   it("/api/users/register ~ Should return a status code 409 if the email is already used", async () => {
-    jest.spyOn(User.prototype, "save").mockImplementation(() => {
+    jest.spyOn(User, "save").mockImplementation(() => {
       throw new DatabaseError(
         'duplicate key value violates unique constraint "users_email_key"',
         205,
@@ -296,7 +294,7 @@ describe("api.ts test", () => {
   });
 
   it("/api/users/register ~ Should return a status code 500 if the database throws an error", async () => {
-    jest.spyOn(User.prototype, "save").mockImplementation(() => {
+    jest.spyOn(User, "save").mockImplementation(() => {
       throw new Error("");
     });
 
