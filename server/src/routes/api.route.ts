@@ -12,7 +12,7 @@ api.post("/users/register", async (req, res) => {
   const emailIsNotValid =
     typeof email !== "string" ||
     email.trim() === "" ||
-    !isValidEmailFormat(email);
+    !isValidEmailFormat(email.trim());
 
   if (emailIsNotValid) {
     return res.status(400).json({ status: 400, error: "Email is not valid" });
@@ -28,7 +28,11 @@ api.post("/users/register", async (req, res) => {
   }
 
   try {
-    await User.save({ email, password });
+    const saltRounds = 10;
+    await User.save({
+      email: email.trim().toLowerCase(),
+      password: bcrypt.hashSync(password, saltRounds),
+    });
   } catch (err) {
     if (
       err instanceof DatabaseError &&

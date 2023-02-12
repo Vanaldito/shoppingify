@@ -250,6 +250,52 @@ describe("api.ts test", () => {
     });
   });
 
+  it("/api/users/register ~ Should save the email in lowercase and without spaces at the beginning or at the end", async () => {
+    let savedEmail = "   tesT@test.com";
+    jest.spyOn(User, "save").mockImplementation(({ email }) => {
+      savedEmail = email;
+
+      return new Promise(resolve => resolve(true));
+    });
+
+    const response = await api
+      .post("/api/users/register")
+      .send({
+        email: "   tesT@test.com",
+        password: "Password",
+      })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      status: 200,
+    });
+
+    expect(savedEmail).toBe("test@test.com");
+  });
+
+  it("/api/users/register ~ Should hash the password before saving", async () => {
+    let savedPassword = "Password";
+    jest.spyOn(User, "save").mockImplementation(({ password }) => {
+      savedPassword = password;
+
+      return new Promise(resolve => resolve(true));
+    });
+
+    const response = await api
+      .post("/api/users/register")
+      .send({
+        email: "test@test.com",
+        password: "Password",
+      })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      status: 200,
+    });
+
+    expect(bcrypt.compareSync("Password", savedPassword)).toBe(true);
+  });
+
   it("/api/users/register ~ Should save the user info if all of the email and the password are valid", async () => {
     const saveUser = jest.spyOn(User, "save").mockImplementation(() => {
       return new Promise(resolve => resolve(true));
