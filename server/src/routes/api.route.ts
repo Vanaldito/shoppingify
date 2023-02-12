@@ -32,6 +32,9 @@ api.post("/users/register", async (req, res) => {
     await User.save({
       email: email.trim().toLowerCase(),
       password: bcrypt.hashSync(password, saltRounds),
+      items: [],
+      activeShoppingList: { name: `default--${Date.now()}`, list: [] },
+      shoppingHistory: [],
     });
   } catch (err) {
     if (
