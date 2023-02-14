@@ -14,6 +14,9 @@ jest.spyOn(User, "findByEmail").mockImplementation(email => {
       id: 1,
       email: email,
       password: bcrypt.hashSync("Password", saltRounds),
+      items: [],
+      activeShoppingList: { name: "default--282342", list: [] },
+      shoppingHistory: [],
     })
   );
 });
@@ -112,6 +115,9 @@ describe("api.ts test", () => {
             id: 1,
             email: email,
             password: bcrypt.hashSync("Password", saltRounds),
+            items: [],
+            activeShoppingList: { name: "default--282342", list: [] },
+            shoppingHistory: [],
           })
         );
       });
@@ -140,6 +146,9 @@ describe("api.ts test", () => {
             id: 1,
             email: "test@test.com",
             password: bcrypt.hashSync("Password", saltRounds),
+            items: [],
+            activeShoppingList: { name: "default--282342", list: [] },
+            shoppingHistory: [],
           },
         ];
 
