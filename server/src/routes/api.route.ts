@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import { Router } from "express";
+import jwt from "jsonwebtoken";
 import { DatabaseError } from "pg";
+import env from "../../environment";
 import { isValidEmailFormat } from "../helpers";
 import { User } from "../models";
 
@@ -27,9 +29,10 @@ api.post("/users/register", async (req, res) => {
       .json({ status: 400, error: "Password is not valid" });
   }
 
+  let user;
   try {
     const saltRounds = 10;
-    await User.save({
+    user = await User.save({
       email: email.trim().toLowerCase(),
       password: bcrypt.hashSync(password, saltRounds),
       items: [],
@@ -53,7 +56,10 @@ api.post("/users/register", async (req, res) => {
       .json({ status: 500, error: "Internal server error" });
   }
 
-  return res.status(200).json({ status: 200 });
+  return res
+    .status(200)
+    .cookie("auth-token", jwt.sign({ id: user.id }, env.JWT_SECRET as string))
+    .json({ status: 200 });
 });
 
 api.post("/users/login", async (req, res) => {
@@ -93,7 +99,10 @@ api.post("/users/login", async (req, res) => {
       .json({ status: 401, error: "Email or password incorrect" });
   }
 
-  res.status(200).json({ status: 200 });
+  res
+    .status(200)
+    .cookie("auth-token", jwt.sign({ id: user.id }, env.JWT_SECRET as string))
+    .json({ status: 200 });
 });
 
 export default api;

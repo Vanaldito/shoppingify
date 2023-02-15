@@ -11,12 +11,20 @@ export default class User {
     activeShoppingList,
     shoppingHistory,
   }: UserData) {
-    await db.query(
-      "INSERT INTO users (email, password, items, activeShoppingList, shoppingHistory) VALUES ($1, $2, $3, $4, $5)",
+    const dbResult = await db.query(
+      "INSERT INTO users (email, password, items, activeShoppingList, shoppingHistory) VALUES ($1, $2, $3, $4, $5) RETURNING *",
       [email, password, items, activeShoppingList, shoppingHistory]
     );
 
-    return true;
+    const users = dbResult.rows as DatabaseUserRow[];
+
+    if (users.length === 0) {
+      throw new Error("Internal server error");
+    }
+
+    const user = users[0];
+
+    return dbUserAdapter(user);
   }
 
   static async findByEmail(email: string) {

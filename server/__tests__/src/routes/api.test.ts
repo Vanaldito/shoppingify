@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { DatabaseError } from "pg";
 import supertest from "supertest";
+import env from "../../../environment";
 import { app, server } from "../../../index";
 import { User } from "../../../src/models";
 
@@ -22,7 +24,18 @@ jest.spyOn(User, "findByEmail").mockImplementation(email => {
 });
 
 jest.spyOn(User, "save").mockImplementation(() => {
-  return new Promise(resolve => resolve(true));
+  const saltRounds = 10;
+
+  return new Promise(resolve =>
+    resolve({
+      id: 1,
+      email: "test@test.com",
+      password: bcrypt.hashSync("Password", saltRounds),
+      items: [],
+      activeShoppingList: { name: "default--282342", list: [] },
+      shoppingHistory: [],
+    })
+  );
 });
 
 describe("api.ts test", () => {
@@ -189,6 +202,36 @@ describe("api.ts test", () => {
     expect(findByEmail).toHaveBeenCalledTimes(1);
   });
 
+  it("/api/users/login ~ Should return a cookie with the user id encrypted with jsonwebtoken", async () => {
+    jest.spyOn(User, "findByEmail").mockImplementation(email => {
+      const saltRounds = 10;
+
+      const users = [
+        {
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [],
+          activeShoppingList: { name: "default--282342", list: [] },
+          shoppingHistory: [],
+        },
+      ];
+
+      return new Promise(resolve =>
+        resolve(users.find(user => user.email === email))
+      );
+    });
+
+    const response = await api
+      .post("/api/users/login")
+      .send({ email: "test@test.com", password: "Password" })
+      .expect(200);
+
+    expect(response.get("Set-Cookie")).toContain(
+      `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}; Path=/`
+    );
+  });
+
   it("/api/users/register ~ Should return a status code 400 and a json error if the email is not a string", async () => {
     const response = await api
       .post("/api/users/register")
@@ -263,8 +306,18 @@ describe("api.ts test", () => {
     let savedEmail = "   tesT@test.com";
     jest.spyOn(User, "save").mockImplementation(({ email }) => {
       savedEmail = email;
+      const saltRounds = 10;
 
-      return new Promise(resolve => resolve(true));
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [],
+          activeShoppingList: { name: "default--282342", list: [] },
+          shoppingHistory: [],
+        })
+      );
     });
 
     const response = await api
@@ -286,8 +339,18 @@ describe("api.ts test", () => {
     let savedPassword = "Password";
     jest.spyOn(User, "save").mockImplementation(({ password }) => {
       savedPassword = password;
+      const saltRounds = 10;
 
-      return new Promise(resolve => resolve(true));
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync(password, saltRounds),
+          items: [],
+          activeShoppingList: { name: "default--282342", list: [] },
+          shoppingHistory: [],
+        })
+      );
     });
 
     const response = await api
@@ -307,7 +370,18 @@ describe("api.ts test", () => {
 
   it("/api/users/register ~ Should save the user info if all of the email and the password are valid", async () => {
     const saveUser = jest.spyOn(User, "save").mockImplementation(() => {
-      return new Promise(resolve => resolve(true));
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [],
+          activeShoppingList: { name: "default--282342", list: [] },
+          shoppingHistory: [],
+        })
+      );
     });
 
     const response = await api
@@ -365,5 +439,31 @@ describe("api.ts test", () => {
       status: 500,
       error: "Internal server error",
     });
+  });
+
+  it("/api/users/register ~ Should return a cookie with the user id encrypted with jsonwebtoken", async () => {
+    jest.spyOn(User, "save").mockImplementation(() => {
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [],
+          activeShoppingList: { name: "default--282342", list: [] },
+          shoppingHistory: [],
+        })
+      );
+    });
+
+    const response = await api
+      .post("/api/users/register")
+      .send({ email: "test@test.com", password: "Password" })
+      .expect(200);
+
+    expect(response.get("Set-Cookie")).toContain(
+      `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}; Path=/`
+    );
   });
 });
