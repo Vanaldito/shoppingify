@@ -26,6 +26,17 @@ export default class User {
 
     return dbUserAdapter(user);
   }
+  static async findById(id: number) {
+    const dbResult = await db.query("SELECT * FROM users WHERE id = $1", [id]);
+
+    const users = dbResult.rows as DatabaseUserRow[];
+
+    if (users.length === 0) {
+      return undefined;
+    }
+
+    return dbUserAdapter(users[0]);
+  }
 
   static async findByEmail(email: string) {
     const dbResult = await db.query("SELECT * FROM users WHERE email = $1", [
@@ -33,8 +44,6 @@ export default class User {
     ]);
 
     const users = dbResult.rows as DatabaseUserRow[];
-
-    console.log(users);
 
     if (users.length === 0) {
       return undefined;
