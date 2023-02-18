@@ -3,6 +3,7 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { DatabaseError } from "pg";
 import env from "../../../environment";
+import { defaultItemsList } from "../../constants";
 import { isValidEmailFormat } from "../../helpers";
 import { User } from "../../models";
 
@@ -35,7 +36,7 @@ users.post("/register", async (req, res) => {
     user = await User.save({
       email: email.trim().toLowerCase(),
       password: bcrypt.hashSync(password, saltRounds),
-      items: [],
+      items: defaultItemsList,
       activeShoppingList: { name: `default--${Date.now()}`, list: [] },
       shoppingHistory: [],
     });

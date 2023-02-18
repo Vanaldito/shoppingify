@@ -4,7 +4,8 @@ import { DatabaseError } from "pg";
 import supertest from "supertest";
 import env from "../../../../environment";
 import { app, server } from "../../../../index";
-import { User } from "../../../../src/models";
+import { defaultItemsList } from "../../../../src/constants";
+import { ItemsList, User } from "../../../../src/models";
 
 const api = supertest(app);
 
@@ -366,6 +367,39 @@ describe("users.route.ts test", () => {
     });
 
     expect(bcrypt.compareSync("Password", savedPassword)).toBe(true);
+  });
+
+  it("/api/users/register ~ Should save the default items list", async () => {
+    let savedItems: ItemsList = [];
+    jest.spyOn(User, "save").mockImplementation(({ items }) => {
+      savedItems = items;
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [],
+          activeShoppingList: { name: "default--282342", list: [] },
+          shoppingHistory: [],
+        })
+      );
+    });
+
+    const response = await api
+      .post("/api/users/register")
+      .send({
+        email: "test@test.com",
+        password: "Password",
+      })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      status: 200,
+    });
+
+    expect(savedItems).toEqual(defaultItemsList);
   });
 
   it("/api/users/register ~ Should save the user info if all of the email and the password are valid", async () => {
