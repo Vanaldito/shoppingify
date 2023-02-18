@@ -1,6 +1,7 @@
 import { dbUserAdapter } from "../adapters";
 import { DatabaseUserRow } from "./DatabaseUserRow.model";
 import db from "./db.model";
+import { ItemsList } from "./ItemsList.model";
 import { UserData } from "./UserData.model";
 
 export default class User {
@@ -50,5 +51,11 @@ export default class User {
     }
 
     return dbUserAdapter(users[0]);
+  }
+
+  static async updateItems(id: number, items: ItemsList) {
+    await db.query("UPDATE users SET items = $1 WHERE id = $2", [items, id]);
+
+    return;
   }
 }
