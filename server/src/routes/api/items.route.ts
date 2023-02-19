@@ -1,6 +1,5 @@
 import { Router } from "express";
-import jwt from "jsonwebtoken";
-import env from "../../../environment";
+import { getUserIdFromToken } from "../../helpers";
 import { User } from "../../models";
 
 const items = Router();
@@ -9,16 +8,9 @@ items.get("/", async (req, res) => {
   const cookies = req.cookies;
   const authToken = cookies["auth-token"];
 
-  if (typeof authToken !== "string") {
-    return res
-      .status(401)
-      .json({ status: 401, error: "Auth token is not valid" });
-  }
+  const id = getUserIdFromToken(authToken);
 
-  let id: number;
-  try {
-    id = (jwt.verify(authToken, env.JWT_SECRET as string) as { id: number }).id;
-  } catch {
+  if (id === undefined) {
     return res
       .status(401)
       .json({ status: 401, error: "Auth token is not valid" });
@@ -48,16 +40,9 @@ items.post("/add", async (req, res) => {
   const cookies = req.cookies;
   const authToken = cookies["auth-token"];
 
-  if (typeof authToken !== "string") {
-    return res
-      .status(401)
-      .json({ status: 401, error: "Auth token is not valid" });
-  }
+  const id = getUserIdFromToken(authToken);
 
-  let id;
-  try {
-    id = (jwt.verify(authToken, env.JWT_SECRET as string) as { id: number }).id;
-  } catch {
+  if (id === undefined) {
     return res
       .status(401)
       .json({ status: 401, error: "Auth token is not valid" });
@@ -66,25 +51,30 @@ items.post("/add", async (req, res) => {
   const { category, name } = req.body;
   let { note, image } = req.body;
 
-  if (typeof category !== "string" || category.trim() === "") {
+  const categoryIsInvalid =
+    typeof category !== "string" || category.trim() === "";
+  if (categoryIsInvalid) {
     return res.status(400).json({
       status: 400,
       error: "Category is not valid",
     });
   }
 
-  if (typeof name !== "string" || name.trim() === "") {
+  const nameIsInvalid = typeof name !== "string" || name.trim() === "";
+  if (nameIsInvalid) {
     return res.status(400).json({
       status: 400,
       error: "Name is not valid",
     });
   }
 
-  if (typeof note !== "string" || note.trim() === "") {
+  const noteIsInvalid = typeof note !== "string" || note.trim() === "";
+  if (noteIsInvalid) {
     note = undefined;
   }
 
-  if (typeof image !== "string" || image.trim() === "") {
+  const imageIsInvalid = typeof image !== "string" || image.trim() === "";
+  if (imageIsInvalid) {
     image = undefined;
   }
 
@@ -107,32 +97,31 @@ items.post("/add", async (req, res) => {
 
   const items = user.items;
 
-  const categoryIndex = items.findIndex(
+  let categoryIndex = items.findIndex(
     el => el.category.toLowerCase().trim() === category.toLowerCase().trim()
   );
 
   if (categoryIndex === -1) {
     items.push({
       category: category.trim(),
-      items: [{ name: name.trim(), note: note?.trim(), image: image?.trim() }],
+      items: [],
     });
-  } else {
-    const itemIndex = items[categoryIndex].items.findIndex(
-      item => item.name.toLowerCase().trim() === name.toLowerCase().trim()
-    );
-
-    if (itemIndex !== -1) {
-      return res
-        .status(409)
-        .json({ status: 409, error: "Item already exists" });
-    }
-
-    items[categoryIndex].items.push({
-      name: name.trim(),
-      note: note?.trim(),
-      image: image?.trim(),
-    });
+    categoryIndex = items.length - 1;
   }
+
+  const itemIndex = items[categoryIndex].items.findIndex(
+    item => item.name.toLowerCase().trim() === name.toLowerCase().trim()
+  );
+
+  if (itemIndex !== -1) {
+    return res.status(409).json({ status: 409, error: "Item already exists" });
+  }
+
+  items[categoryIndex].items.push({
+    name: name.trim(),
+    note: note?.trim(),
+    image: image?.trim(),
+  });
 
   try {
     await User.updateItems(id, items);
