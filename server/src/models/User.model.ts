@@ -2,6 +2,7 @@ import { dbUserAdapter } from "../adapters";
 import { DatabaseUserRow } from "./DatabaseUserRow.model";
 import db from "./db.model";
 import { ItemsList } from "./ItemsList.model";
+import { ShoppingList } from "./ShoppingList.model";
 import { UserData } from "./UserData.model";
 
 export default class User {
@@ -55,6 +56,18 @@ export default class User {
 
   static async updateItems(id: number, items: ItemsList) {
     await db.query("UPDATE users SET items = $1 WHERE id = $2", [items, id]);
+
+    return;
+  }
+
+  static async updateActiveShoppingList(
+    id: number,
+    activeShoppingList: ShoppingList
+  ) {
+    await db.query("UPDATE users SET activeShoppingList = $1 WHERE id = $2", [
+      activeShoppingList,
+      id,
+    ]);
 
     return;
   }
