@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { getUserIdFromToken, updateItemInShoppingList } from "../../helpers";
+import {
+  getUserIdFromToken,
+  itemIsInItemsList,
+  updateItemInShoppingList,
+} from "../../helpers";
 import { User } from "../../models";
 
 const activeShoppingList = Router();
@@ -97,25 +101,7 @@ activeShoppingList.post("/update", async (req, res) => {
 
   const items = user.items;
 
-  function itemIsInItemsList() {
-    const categoryIndex = items.findIndex(
-      el => el.category.toLowerCase().trim() === category.toLowerCase().trim()
-    );
-    if (categoryIndex === -1) {
-      return false;
-    }
-
-    const itemIndex = items[categoryIndex].items.findIndex(
-      item => item.name.toLowerCase().trim() === name.toLowerCase().trim()
-    );
-    if (itemIndex === -1) {
-      return false;
-    }
-
-    return true;
-  }
-
-  if (!itemIsInItemsList()) {
+  if (!itemIsInItemsList(items, { category, name })) {
     return res
       .status(409)
       .json({ status: 409, error: "Item is not in the items list" });
