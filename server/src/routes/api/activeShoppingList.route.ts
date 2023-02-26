@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUserIdFromToken } from "../../helpers";
+import { getUserIdFromToken, updateItemInShoppingList } from "../../helpers";
 import { User } from "../../models";
 
 const activeShoppingList = Router();
@@ -123,31 +123,12 @@ activeShoppingList.post("/update", async (req, res) => {
 
   const activeShoppingList = user.activeShoppingList;
 
-  let categoryIndex = activeShoppingList.list.findIndex(
-    el => el.category.toLowerCase().trim() === category.toLowerCase().trim()
-  );
-  if (categoryIndex === -1) {
-    activeShoppingList.list.push({ category: category.trim(), items: [] });
-
-    categoryIndex = activeShoppingList.list.length - 1;
-  }
-
-  let itemIndex = activeShoppingList.list[categoryIndex].items.findIndex(
-    item => item.name.toLowerCase().trim() === name.toLowerCase().trim()
-  );
-  if (itemIndex === -1) {
-    activeShoppingList.list[categoryIndex].items.push({
-      name: name.trim(),
-      amount: 0,
-      completed: false,
-    });
-
-    itemIndex = activeShoppingList.list[categoryIndex].items.length - 1;
-  }
-
-  const item = activeShoppingList.list[categoryIndex].items[itemIndex];
-  item.amount = amount;
-  item.completed = completed;
+  updateItemInShoppingList(activeShoppingList, {
+    category,
+    name,
+    amount,
+    completed,
+  });
 
   try {
     await User.updateActiveShoppingList(id, activeShoppingList);
