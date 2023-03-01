@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUserIdFromToken } from "../../helpers";
+import { getUserIdFromToken, insertItemInItemsList } from "../../helpers";
 import { User } from "../../models";
 
 const items = Router();
@@ -97,31 +97,16 @@ items.post("/add", async (req, res) => {
 
   const items = user.items;
 
-  let categoryIndex = items.findIndex(
-    el => el.category.toLowerCase().trim() === category.toLowerCase().trim()
-  );
+  const wasAdded = insertItemInItemsList(items, {
+    category,
+    name,
+    image,
+    note,
+  });
 
-  if (categoryIndex === -1) {
-    items.push({
-      category: category.trim(),
-      items: [],
-    });
-    categoryIndex = items.length - 1;
-  }
-
-  const itemIndex = items[categoryIndex].items.findIndex(
-    item => item.name.toLowerCase().trim() === name.toLowerCase().trim()
-  );
-
-  if (itemIndex !== -1) {
+  if (!wasAdded) {
     return res.status(409).json({ status: 409, error: "Item already exists" });
   }
-
-  items[categoryIndex].items.push({
-    name: name.trim(),
-    note: note?.trim(),
-    image: image?.trim(),
-  });
 
   try {
     await User.updateItems(id, items);
