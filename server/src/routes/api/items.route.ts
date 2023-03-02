@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { getUserIdFromToken, insertItemInItemsList } from "../../helpers";
+import {
+  deleteItemFromItemsList,
+  getUserIdFromToken,
+  insertItemInItemsList,
+} from "../../helpers";
 import { User } from "../../models";
 
 const items = Router();
@@ -167,28 +171,12 @@ items.post("/delete", async (req, res) => {
 
   const items = user.items;
 
-  const categoryIndex = items.findIndex(
-    el => el.category.toLowerCase().trim() === category.toLowerCase().trim()
-  );
-  if (categoryIndex === -1) {
+  const wasDeleted = deleteItemFromItemsList(items, { category, name });
+
+  if (!wasDeleted) {
     return res
       .status(404)
       .json({ status: 404, error: "Item is not in the items list" });
-  }
-
-  const itemIndex = items[categoryIndex].items.findIndex(
-    item => item.name.toLowerCase().trim() === name.toLowerCase().trim()
-  );
-  if (itemIndex === -1) {
-    return res
-      .status(404)
-      .json({ status: 404, error: "Item is not in the items list" });
-  }
-
-  if (items[categoryIndex].items.length === 1) {
-    items.splice(categoryIndex, 1);
-  } else {
-    items[categoryIndex].items.splice(itemIndex, 1);
   }
 
   await User.updateItems(id, items);
