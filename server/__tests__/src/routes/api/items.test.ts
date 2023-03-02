@@ -1081,4 +1081,51 @@ describe("items.route.ts test", () => {
       },
     ]);
   });
+
+  it("/api/items/delete ~ Should return a status code 500 if the database throws an error when updating the items list", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [
+            {
+              category: "Category 1",
+              items: [
+                { name: "Item 1", note: "Note 1", image: "https://image1.com" },
+              ],
+            },
+            {
+              category: "Category 2",
+              items: [
+                { name: "Item 2", note: "Note 2", image: "https://image2.com" },
+              ],
+            },
+          ],
+          activeShoppingList: { name: "default--282342", list: [] },
+          shoppingHistory: [],
+        })
+      );
+    });
+
+    jest.spyOn(User, "updateItems").mockImplementation(() => {
+      throw new Error("");
+    });
+
+    const response = await api
+      .post("/api/items/delete")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ category: "Category 1", name: "Item 1" })
+      .expect(500);
+
+    expect(response.body).toEqual({
+      status: 500,
+      error: "Internal server error",
+    });
+  });
 });

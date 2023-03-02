@@ -179,7 +179,15 @@ items.post("/delete", async (req, res) => {
       .json({ status: 404, error: "Item is not in the items list" });
   }
 
-  await User.updateItems(id, items);
+  try {
+    await User.updateItems(id, items);
+  } catch (err) {
+    console.log(err);
+
+    return res
+      .status(500)
+      .json({ status: 500, error: "Internal server error" });
+  }
 
   return res.status(200).json({ status: 200 });
 });
