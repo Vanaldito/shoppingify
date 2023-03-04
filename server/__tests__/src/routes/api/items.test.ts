@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import supertest from "supertest";
 import env from "../../../../environment";
 import { app, server } from "../../../../index";
-import { ItemsList, User } from "../../../../src/models";
+import { ItemsList, ShoppingList, User } from "../../../../src/models";
 
 const api = supertest(app);
 
@@ -940,7 +940,7 @@ describe("items.route.ts test", () => {
     });
 
     jest
-      .spyOn(User, "updateItems")
+      .spyOn(User, "updateItemsAndActiveShoppingList")
       .mockImplementation(() => new Promise(resolve => resolve()));
 
     const response1 = await api
@@ -995,11 +995,13 @@ describe("items.route.ts test", () => {
     });
 
     let savedItems: ItemsList = [];
-    jest.spyOn(User, "updateItems").mockImplementation((_id, items) => {
-      savedItems = items;
+    jest
+      .spyOn(User, "updateItemsAndActiveShoppingList")
+      .mockImplementation((_id, items) => {
+        savedItems = items;
 
-      return new Promise(resolve => resolve());
-    });
+        return new Promise(resolve => resolve());
+      });
 
     const response = await api
       .post("/api/items/delete")
@@ -1024,7 +1026,7 @@ describe("items.route.ts test", () => {
     ]);
   });
 
-  it("/api/items/delete ~ Should remove the entire category if it is the only item in it", async () => {
+  it("/api/items/delete ~ Should remove the entire category if there are no more items in it", async () => {
     jest.spyOn(User, "findById").mockImplementation(() => {
       const saltRounds = 10;
 
@@ -1054,11 +1056,13 @@ describe("items.route.ts test", () => {
     });
 
     let savedItems: ItemsList = [];
-    jest.spyOn(User, "updateItems").mockImplementation((_id, items) => {
-      savedItems = items;
+    jest
+      .spyOn(User, "updateItemsAndActiveShoppingList")
+      .mockImplementation((_id, items) => {
+        savedItems = items;
 
-      return new Promise(resolve => resolve());
-    });
+        return new Promise(resolve => resolve());
+      });
 
     const response = await api
       .post("/api/items/delete")
@@ -1082,7 +1086,100 @@ describe("items.route.ts test", () => {
     ]);
   });
 
-  it("/api/items/delete ~ Should return a status code 500 if the database throws an error when updating the items list", async () => {
+  it("/api/items/delete ~ Should remove the item from the active shopping list too if the shopping list includes it", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [
+            {
+              category: "Category 1",
+              items: [
+                { name: "Item 1", note: "Note 1", image: "https://image1.com" },
+              ],
+            },
+            {
+              category: "Category 2",
+              items: [
+                { name: "Item 2", note: "Note 2", image: "https://image2.com" },
+              ],
+            },
+          ],
+          activeShoppingList: {
+            name: "default--282342",
+            list: [
+              {
+                category: "Category 1",
+                items: [{ name: "Item 1", amount: 5, completed: false }],
+              },
+              {
+                category: "Category 2",
+                items: [{ name: "Item 2", amount: 5, completed: true }],
+              },
+            ],
+          },
+          shoppingHistory: [],
+        })
+      );
+    });
+
+    let savedItems: ItemsList = [];
+    let savedShoppingList: ShoppingList = {
+      name: "default--282342",
+      list: [],
+    };
+    jest
+      .spyOn(User, "updateItemsAndActiveShoppingList")
+      .mockImplementation((_id, items, shoppingList) => {
+        savedItems = items;
+        savedShoppingList = shoppingList;
+
+        return new Promise(resolve => resolve());
+      });
+
+    const response = await api
+      .post("/api/items/delete")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ category: "Category 1", name: "Item 1" })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      status: 200,
+    });
+
+    expect(savedItems).toEqual([
+      {
+        category: "Category 2",
+        items: [
+          { name: "Item 2", note: "Note 2", image: "https://image2.com" },
+        ],
+      },
+    ]);
+
+    expect(savedShoppingList).toEqual({
+      name: "default--282342",
+      list: [
+        {
+          category: "Category 2",
+          items: [
+            {
+              name: "Item 2",
+              amount: 5,
+              completed: true,
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("/api/items/delete ~ Should return a status code 500 if the database throws an error when updating the items list and the active shopping list", async () => {
     jest.spyOn(User, "findById").mockImplementation(() => {
       const saltRounds = 10;
 
@@ -1111,9 +1208,11 @@ describe("items.route.ts test", () => {
       );
     });
 
-    jest.spyOn(User, "updateItems").mockImplementation(() => {
-      throw new Error("");
-    });
+    jest
+      .spyOn(User, "updateItemsAndActiveShoppingList")
+      .mockImplementation(() => {
+        throw new Error("");
+      });
 
     const response = await api
       .post("/api/items/delete")

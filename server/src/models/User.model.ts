@@ -71,4 +71,17 @@ export default class User {
 
     return;
   }
+
+  static async updateItemsAndActiveShoppingList(
+    id: number,
+    items: ItemsList,
+    activeShoppingList: ShoppingList
+  ) {
+    await db.query(
+      "UPDATE users SET items = $1, activeShoppingList = $2 WHERE id = $3",
+      [items, activeShoppingList, id]
+    );
+
+    return;
+  }
 }

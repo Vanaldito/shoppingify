@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   deleteItemFromItemsList,
+  deleteItemFromShoppingList,
   getUserIdFromToken,
   insertItemInItemsList,
 } from "../../helpers";
@@ -170,6 +171,7 @@ items.post("/delete", async (req, res) => {
   }
 
   const items = user.items;
+  const activeShoppingList = user.activeShoppingList;
 
   const wasDeleted = deleteItemFromItemsList(items, { category, name });
 
@@ -179,8 +181,10 @@ items.post("/delete", async (req, res) => {
       .json({ status: 404, error: "Item is not in the items list" });
   }
 
+  deleteItemFromShoppingList(activeShoppingList, { category, name });
+
   try {
-    await User.updateItems(id, items);
+    await User.updateItemsAndActiveShoppingList(id, items, activeShoppingList);
   } catch (err) {
     console.log(err);
 
