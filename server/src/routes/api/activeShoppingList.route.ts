@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  deleteItemFromShoppingList,
   getUserIdFromToken,
   itemIsInItemsList,
   updateItemInShoppingList,
@@ -172,28 +173,15 @@ activeShoppingList.post("/delete", async (req, res) => {
 
   const shoppingList = user.activeShoppingList;
 
-  const categoryIndex = shoppingList.list.findIndex(
-    el => el.category.toLowerCase().trim() === category.toLowerCase().trim()
-  );
-  if (categoryIndex === -1) {
+  const wasDeleted = deleteItemFromShoppingList(shoppingList, {
+    category,
+    name,
+  });
+
+  if (!wasDeleted) {
     return res
       .status(404)
       .json({ status: 404, error: "Item is not in the shopping list" });
-  }
-
-  const itemIndex = shoppingList.list[categoryIndex].items.findIndex(
-    item => item.name.toLowerCase().trim() === name.toLowerCase().trim()
-  );
-  if (itemIndex === -1) {
-    return res
-      .status(404)
-      .json({ status: 404, error: "Item is not in the shopping list" });
-  }
-
-  if (shoppingList.list[categoryIndex].items.length === 1) {
-    shoppingList.list.splice(categoryIndex, 1);
-  } else {
-    shoppingList.list[categoryIndex].items.splice(itemIndex, 1);
   }
 
   try {
