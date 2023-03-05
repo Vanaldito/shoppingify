@@ -1112,4 +1112,258 @@ describe("activeShoppingList.route.ts test", () => {
       error: "Internal server error",
     });
   });
+
+  it("/api/active-shopping-list/name ~ Should return a status code of 401 if the user auth token is invalid", async () => {
+    const response1 = await api
+      .post("/api/active-shopping-list/name")
+      .expect(401);
+
+    expect(response1.body).toEqual({
+      status: 401,
+      error: "Auth token is not valid",
+    });
+
+    const response2 = await api
+      .post("/api/active-shopping-list/name")
+      .set("Cookie", ["auth-token=something"])
+      .expect(401);
+
+    expect(response2.body).toEqual({
+      status: 401,
+      error: "Auth token is not valid",
+    });
+  });
+
+  it("/api/active-shopping-list/name ~ Should return a status code 400 if the name is not a valid string", async () => {
+    const response = await api
+      .post("/api/active-shopping-list/name")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ name: null })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      status: 400,
+      error: "Name is not valid",
+    });
+
+    await api
+      .post("/api/active-shopping-list/name")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ name: "" })
+      .expect(400);
+
+    await api
+      .post("/api/active-shopping-list/name")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ name: "\n\n" })
+      .expect(400);
+  });
+
+  it("/api/active-shopping-list/name ~ Should return a status code 404 if the user does not exist or was deleted", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      return new Promise(resolve => resolve(undefined));
+    });
+
+    const response = await api
+      .post("/api/active-shopping-list/name")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ name: "Name" })
+      .expect(404);
+
+    expect(response.body).toEqual({
+      status: 404,
+      error: "User does not exist or was deleted",
+    });
+  });
+
+  it("/api/active-shopping-list/name ~ Should return a status code 500 if the database throws an error when finding the user", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      throw new Error("");
+    });
+
+    const response = await api
+      .post("/api/active-shopping-list/name")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ name: "Name" })
+      .expect(500);
+
+    expect(response.body).toEqual({
+      status: 500,
+      error: "Internal server error",
+    });
+  });
+
+  it("/api/active-shopping-list/name ~ Should change the active shopping list name", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [
+            {
+              category: "Category 1",
+              items: [
+                { name: "Item 1", note: "Note 1", image: "https://image1.com" },
+                { name: "Item 2", note: "Note 2", image: "https://image2.com" },
+                { name: "Item 3", note: "Note 3", image: "https://image3.com" },
+              ],
+            },
+          ],
+          activeShoppingList: {
+            name: "default--282342",
+            list: [
+              {
+                category: "Category 1",
+                items: [
+                  {
+                    name: "Item 1",
+                    amount: 10,
+                    completed: false,
+                  },
+                  {
+                    name: "Item 2",
+                    amount: 20,
+                    completed: true,
+                  },
+                  {
+                    name: "Item 3",
+                    amount: 30,
+                    completed: false,
+                  },
+                ],
+              },
+            ],
+          },
+          shoppingHistory: [],
+        })
+      );
+    });
+
+    let savedShoppingList: ShoppingList = { name: "default--282342", list: [] };
+    jest
+      .spyOn(User, "updateActiveShoppingList")
+      .mockImplementation((_id, shoppingList) => {
+        savedShoppingList = shoppingList;
+
+        return new Promise(resolve => resolve());
+      });
+
+    const response = await api
+      .post("/api/active-shopping-list/name")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ name: "\t\tName" })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      status: 200,
+    });
+
+    expect(savedShoppingList).toEqual({
+      name: "Name",
+      list: [
+        {
+          category: "Category 1",
+          items: [
+            {
+              name: "Item 1",
+              amount: 10,
+              completed: false,
+            },
+            {
+              name: "Item 2",
+              amount: 20,
+              completed: true,
+            },
+            {
+              name: "Item 3",
+              amount: 30,
+              completed: false,
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("/api/active-shopping-list/name ~ Should return a status code 500 if the database throws an error when updating the activeShoppingList", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [
+            {
+              category: "Category 1",
+              items: [
+                { name: "Item 1", note: "Note 1", image: "https://image1.com" },
+                { name: "Item 2", note: "Note 2", image: "https://image2.com" },
+                { name: "Item 3", note: "Note 3", image: "https://image3.com" },
+              ],
+            },
+          ],
+          activeShoppingList: {
+            name: "default--282342",
+            list: [
+              {
+                category: "Category 1",
+                items: [
+                  {
+                    name: "Item 1",
+                    amount: 10,
+                    completed: false,
+                  },
+                  {
+                    name: "Item 2",
+                    amount: 20,
+                    completed: true,
+                  },
+                  {
+                    name: "Item 3",
+                    amount: 30,
+                    completed: false,
+                  },
+                ],
+              },
+            ],
+          },
+          shoppingHistory: [],
+        })
+      );
+    });
+
+    jest.spyOn(User, "updateActiveShoppingList").mockImplementation(() => {
+      throw new Error("");
+    });
+
+    const response = await api
+      .post("/api/active-shopping-list/name")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ name: "\t\tName" })
+      .expect(500);
+
+    expect(response.body).toEqual({
+      status: 500,
+      error: "Internal server error",
+    });
+  });
 });
