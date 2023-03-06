@@ -249,4 +249,82 @@ activeShoppingList.post("/name", async (req, res) => {
   return res.status(200).json({ status: 200 });
 });
 
+activeShoppingList.post("/cancel", async (req, res) => {
+  const cookies = req.cookies;
+  const authToken = cookies["auth-token"];
+
+  const id = getUserIdFromToken(authToken);
+
+  if (id === undefined) {
+    return res
+      .status(401)
+      .json({ status: 401, error: "Auth token is not valid" });
+  }
+
+  const { status } = req.body;
+
+  if (
+    typeof status !== "string" ||
+    (status.toLowerCase().trim() !== "completed" &&
+      status.toLowerCase().trim() !== "cancelled")
+  ) {
+    return res
+      .status(400)
+      .json({ status: 400, error: "Cancellation status is not valid" });
+  }
+
+  let user;
+  try {
+    user = await User.findById(id);
+  } catch (err) {
+    console.log(err);
+
+    return res
+      .status(500)
+      .json({ status: 500, error: "Internal server error" });
+  }
+
+  if (user === undefined) {
+    return res
+      .status(404)
+      .json({ status: 404, error: "User does not exist or was deleted" });
+  }
+
+  const { shoppingHistory, activeShoppingList } = user;
+
+  const cancellationDate = new Date().toString();
+
+  const newShoppingHistory = [
+    {
+      date: cancellationDate,
+      state: status.toLowerCase().trim() as "completed" | "cancelled",
+      ...activeShoppingList,
+    },
+    ...shoppingHistory,
+  ];
+  const newActiveShoppingList = { name: `default--${Date.now()}`, list: [] };
+
+  try {
+    await User.updateActiveShoppingListAndShoppingHistory(
+      id,
+      newActiveShoppingList,
+      newShoppingHistory
+    );
+  } catch (err) {
+    console.log(err);
+
+    return res
+      .status(500)
+      .json({ status: 500, error: "Internal server error" });
+  }
+
+  return res.status(200).json({
+    status: 200,
+    data: {
+      cancellationDate,
+      newActiveShoppingListName: newActiveShoppingList.name,
+    },
+  });
+});
+
 export default activeShoppingList;

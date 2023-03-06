@@ -2,7 +2,7 @@ import { dbUserAdapter } from "../adapters";
 import { DatabaseUserRow } from "./DatabaseUserRow.model";
 import db from "./db.model";
 import { ItemsList } from "./ItemsList.model";
-import { ShoppingList } from "./ShoppingList.model";
+import { ShoppingHistory, ShoppingList } from "./ShoppingList.model";
 import { UserData } from "./UserData.model";
 
 export default class User {
@@ -80,6 +80,19 @@ export default class User {
     await db.query(
       "UPDATE users SET items = $1, activeShoppingList = $2 WHERE id = $3",
       [items, activeShoppingList, id]
+    );
+
+    return;
+  }
+
+  static async updateActiveShoppingListAndShoppingHistory(
+    id: number,
+    activeShoppingList: ShoppingList,
+    shoppingHistory: ShoppingHistory
+  ) {
+    await db.query(
+      "UPDATE users SET activeShoppingList = $1, shoppingHistory = $2 WHERE id = $3",
+      [activeShoppingList, shoppingHistory, id]
     );
 
     return;

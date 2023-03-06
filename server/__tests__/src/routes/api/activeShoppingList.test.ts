@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import supertest from "supertest";
 import env from "../../../../environment";
 import { app, server } from "../../../../index";
-import { ShoppingList, User } from "../../../../src/models";
+import { ShoppingHistory, ShoppingList, User } from "../../../../src/models";
 
 const api = supertest(app);
 
@@ -1359,6 +1359,310 @@ describe("activeShoppingList.route.ts test", () => {
         `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
       ])
       .send({ name: "\t\tName" })
+      .expect(500);
+
+    expect(response.body).toEqual({
+      status: 500,
+      error: "Internal server error",
+    });
+  });
+
+  it("/api/active-shopping-list/cancel ~ Should return a status code 401 if the user auth token is not valid", async () => {
+    const response1 = await api
+      .post("/api/active-shopping-list/cancel")
+      .expect(401);
+
+    expect(response1.body).toEqual({
+      status: 401,
+      error: "Auth token is not valid",
+    });
+
+    const response2 = await api
+      .post("/api/active-shopping-list/cancel")
+      .set("Cookie", ["auth-token=something"])
+      .expect(401);
+
+    expect(response2.body).toEqual({
+      status: 401,
+      error: "Auth token is not valid",
+    });
+  });
+
+  it("/api/active-shopping-list/cancel ~ Should return a status code 400 if the cancellation status is not completed or cancelled", async () => {
+    const response = await api
+      .post("/api/active-shopping-list/cancel")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ status: /something/ })
+      .expect(400);
+
+    expect(response.body).toEqual({
+      status: 400,
+      error: "Cancellation status is not valid",
+    });
+
+    await api
+      .post("/api/active-shopping-list/cancel")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ status: "" })
+      .expect(400);
+
+    await api
+      .post("/api/active-shopping-list/cancel")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ status: "complete" })
+      .expect(400);
+  });
+
+  it("/api/active-shopping-list/cancel ~ Should return a status code 404 if the user does exist or was deleted", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      return new Promise(resolve => {
+        resolve(undefined);
+      });
+    });
+
+    const response = await api
+      .post("/api/active-shopping-list/cancel")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ status: "Completed" })
+      .expect(404);
+
+    expect(response.body).toEqual({
+      status: 404,
+      error: "User does not exist or was deleted",
+    });
+  });
+
+  it("/api/active-shopping-list/cancel ~ Should return a status code 500 if the database throws an error when finding the user", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      throw new Error("");
+    });
+
+    const response = await api
+      .post("/api/active-shopping-list/cancel")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ status: "Completed" })
+      .expect(500);
+
+    expect(response.body).toEqual({
+      status: 500,
+      error: "Internal server error",
+    });
+  });
+
+  it("/api/active-shopping-list/cancel ~ Should add the shopping list to the shopping history and reset the active shopping list and return the new active shopping list name and the cancellation date", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [
+            {
+              category: "Category 1",
+              items: [
+                { name: "Item 1", note: "Note 1", image: "https://image1.com" },
+                { name: "Item 2", note: "Note 2", image: "https://image2.com" },
+                { name: "Item 3", note: "Note 3", image: "https://image3.com" },
+              ],
+            },
+          ],
+          activeShoppingList: {
+            name: "Name 2",
+            list: [
+              {
+                category: "Category 2",
+                items: [
+                  {
+                    name: "Item 2",
+                    amount: 10,
+                    completed: false,
+                  },
+                ],
+              },
+            ],
+          },
+          shoppingHistory: [
+            {
+              name: "Name 1",
+              state: "completed",
+              date: "Tue Aug 19 1975 23:15:30 GMT-0600 (Central Standard Time)",
+              list: [
+                {
+                  category: "Category 1",
+                  items: [
+                    {
+                      name: "Item 1",
+                      amount: 10,
+                      completed: true,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        })
+      );
+    });
+
+    let savedShoppingList: ShoppingList = { name: "default--282342", list: [] };
+    let savedShoppingHistory: ShoppingHistory = [];
+    jest
+      .spyOn(User, "updateActiveShoppingListAndShoppingHistory")
+      .mockImplementation((_id, shoppingList, shoppingHistory) => {
+        savedShoppingList = shoppingList;
+        savedShoppingHistory = shoppingHistory;
+
+        return new Promise(resolve => resolve());
+      });
+
+    jest.spyOn(Date, "now").mockImplementation(() => {
+      return 282528;
+    });
+    jest.spyOn(Date.prototype, "toString").mockImplementation(() => {
+      return "Tue Aug 19 2023 23:15:30 GMT-0600 (Central Standard Time)";
+    });
+
+    const response = await api
+      .post("/api/active-shopping-list/cancel")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ status: "CancelleD" })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      status: 200,
+      data: {
+        cancellationDate:
+          "Tue Aug 19 2023 23:15:30 GMT-0600 (Central Standard Time)",
+        newActiveShoppingListName: "default--282528",
+      },
+    });
+
+    expect(savedShoppingList).toEqual({
+      name: "default--282528",
+      list: [],
+    });
+
+    expect(savedShoppingHistory).toEqual([
+      {
+        name: "Name 2",
+        state: "cancelled",
+        date: "Tue Aug 19 2023 23:15:30 GMT-0600 (Central Standard Time)",
+        list: [
+          {
+            category: "Category 2",
+            items: [
+              {
+                name: "Item 2",
+                amount: 10,
+                completed: false,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Name 1",
+        state: "completed",
+        date: "Tue Aug 19 1975 23:15:30 GMT-0600 (Central Standard Time)",
+        list: [
+          {
+            category: "Category 1",
+            items: [
+              {
+                name: "Item 1",
+                amount: 10,
+                completed: true,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("/api/active-shopping-list/cancel ~ Should add the shopping list to the shopping history and reset the active shopping list", async () => {
+    jest.spyOn(User, "findById").mockImplementation(() => {
+      const saltRounds = 10;
+
+      return new Promise(resolve =>
+        resolve({
+          id: 1,
+          email: "test@test.com",
+          password: bcrypt.hashSync("Password", saltRounds),
+          items: [
+            {
+              category: "Category 1",
+              items: [
+                { name: "Item 1", note: "Note 1", image: "https://image1.com" },
+                { name: "Item 2", note: "Note 2", image: "https://image2.com" },
+                { name: "Item 3", note: "Note 3", image: "https://image3.com" },
+              ],
+            },
+          ],
+          activeShoppingList: {
+            name: "Name 2",
+            list: [
+              {
+                category: "Category 2",
+                items: [
+                  {
+                    name: "Item 2",
+                    amount: 10,
+                    completed: false,
+                  },
+                ],
+              },
+            ],
+          },
+          shoppingHistory: [
+            {
+              name: "Name 1",
+              state: "completed",
+              date: "Tue Aug 19 1975 23:15:30 GMT-0600 (Central Standard Time)",
+              list: [
+                {
+                  category: "Category 1",
+                  items: [
+                    {
+                      name: "Item 1",
+                      amount: 10,
+                      completed: true,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        })
+      );
+    });
+
+    jest
+      .spyOn(User, "updateActiveShoppingListAndShoppingHistory")
+      .mockImplementation(() => {
+        throw new Error("");
+      });
+
+    const response = await api
+      .post("/api/active-shopping-list/cancel")
+      .set("Cookie", [
+        `auth-token=${jwt.sign({ id: 1 }, env.JWT_SECRET as string)}`,
+      ])
+      .send({ status: "CancelleD" })
       .expect(500);
 
     expect(response.body).toEqual({
