@@ -1,0 +1,53 @@
+.navbar {
+  width: max-content;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 10px;
+  background: #fff;
+}
+
+.navbar ul {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.navbar button {
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  padding: 9px 6px 6px 6px;
+  border: none;
+  background: #f9a109;
+}
+
+@media (min-height: 400px) {
+  .navbar {
+    gap: 30px;
+  }
+
+  .navbar ul {
+    gap: 20px;
+  }
+}
+
+@media (min-height: 600px) {
+  .navbar {
+    gap: 50px;
+  }
+
+  .navbar ul {
+    gap: 50px;
+  }
+}
+
+@media (min-height: 600px) and (min-width: 600px) {
+  .navbar {
+    padding: 25px 20px;
+  }
+}
