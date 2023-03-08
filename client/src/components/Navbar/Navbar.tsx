@@ -9,27 +9,27 @@ import styles from "./Navbar.module.css";
 export default function Navbar() {
   return (
     <nav className={styles.navbar}>
-      <a href="/">
-        <img src="/logo.svg" />
+      <a href="/" title="Shoppingify">
+        <img src="/logo.svg" alt="Shoppingify logo" />
       </a>
       <ul>
         <li>
-          <a href="/">
+          <a href="/" title="Items">
             <ListIcon />
           </a>
         </li>
         <li>
-          <a href="/history">
+          <a href="/history" title="History">
             <HistoryIcon />
           </a>
         </li>
         <li>
-          <a href="/statistics">
+          <a href="/statistics" title="Statistics">
             <StatisticsIcon />
           </a>
         </li>
       </ul>
-      <button>
+      <button aria-label="Toggle shopping list">
         <ShoppingCartIcon />
       </button>
     </nav>
