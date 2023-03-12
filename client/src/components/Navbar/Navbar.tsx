@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   HistoryIcon,
   ListIcon,
@@ -9,24 +10,24 @@ import styles from "./Navbar.module.css";
 export default function Navbar() {
   return (
     <nav className={styles.navbar}>
-      <a href="/" title="Shoppingify">
+      <Link to="/" title="Shoppingify">
         <img src="/logo.svg" alt="Shoppingify logo" />
-      </a>
+      </Link>
       <ul>
         <li>
-          <a href="/" title="Items">
+          <Link to="/" title="Items">
             <ListIcon />
-          </a>
+          </Link>
         </li>
         <li>
-          <a href="/history" title="History">
+          <Link to="/history" title="History">
             <HistoryIcon />
-          </a>
+          </Link>
         </li>
         <li>
-          <a href="/statistics" title="Statistics">
+          <Link to="/statistics" title="Statistics">
             <StatisticsIcon />
-          </a>
+          </Link>
         </li>
       </ul>
       <button aria-label="Toggle shopping list">

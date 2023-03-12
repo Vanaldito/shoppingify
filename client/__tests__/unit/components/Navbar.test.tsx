@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it } from "vitest";
 import { Navbar } from "../../../src/components";
 
@@ -6,17 +7,29 @@ describe("Navbar.tsx test", () => {
   afterEach(cleanup);
 
   it("Should render the Navbar component", () => {
-    render(<Navbar />);
+    render(
+      <MemoryRouter>
+        <Navbar />
+      </MemoryRouter>
+    );
   });
 
   it("Should render a nav element", () => {
-    render(<Navbar />);
+    render(
+      <MemoryRouter>
+        <Navbar />
+      </MemoryRouter>
+    );
 
     screen.getByRole("navigation");
   });
 
   it("Should render a link to go to the homepage, the link should render the logo of the shoppingify and should have a title", () => {
-    render(<Navbar />);
+    render(
+      <MemoryRouter>
+        <Navbar />
+      </MemoryRouter>
+    );
 
     const homePageLink = screen.getAllByRole("link")[0] as HTMLAnchorElement;
 
@@ -30,7 +43,11 @@ describe("Navbar.tsx test", () => {
   });
 
   it("Should render a list with links to /, /history and /statistics, each link should render an icon and have a title", () => {
-    render(<Navbar />);
+    render(
+      <MemoryRouter>
+        <Navbar />
+      </MemoryRouter>
+    );
 
     const linksList = screen.getByRole("list") as HTMLUListElement;
 
@@ -52,7 +69,11 @@ describe("Navbar.tsx test", () => {
   });
 
   it("Should render a button, the button should render an icon and have an accessible name", () => {
-    render(<Navbar />);
+    render(
+      <MemoryRouter>
+        <Navbar />
+      </MemoryRouter>
+    );
 
     const button = screen.getByRole("button") as HTMLButtonElement;
 
