@@ -1,0 +1,98 @@
+.login-page {
+  padding: 20px;
+  box-sizing: border-box;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr max-content;
+  gap: 20px;
+}
+
+.login-page h1 {
+  color: #333333;
+  font-size: 22px;
+  margin-top: 15px;
+}
+
+.login-page form {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-page input {
+  font-size: 16px;
+  padding: 13px;
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.login-page input:focus-visible {
+  outline: 1px solid #f9a109;
+  border: 1px solid #f9a109;
+}
+
+.login-page button {
+  margin-top: 8px;
+  padding: 7px;
+  background: #f9a109;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.login-page button:hover {
+  background: #f59519;
+}
+
+.login-page p {
+  color: #505050;
+  margin-top: 30px;
+  text-align: center;
+}
+
+.login-page p a {
+  color: #2274a3;
+  text-decoration: none;
+}
+
+.login-page p a:hover {
+  text-decoration: underline;
+}
+
+.login-page footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.login-page footer a {
+  text-decoration: none;
+  color: #707070;
+}
+
+.login-page footer a:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 600px) {
+  .login-page {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    width: 500px;
+    margin: 0 auto;
+  }
+
+  .login-page div {
+    margin-top: 80px;
+    padding: 60px;
+    border: 1px solid #bdbdbd;
+    border-radius: 24px;
+  }
+}
